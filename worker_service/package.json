@@ -1,0 +1,27 @@
+{
+  "name": "task-manager-worker",
+  "version": "1.0.0",
+  "description": "CPU-intensive report generation worker for Task Manager A3",
+  "main": "src/worker.js",
+  "scripts": {
+    "start": "node src/worker.js",
+    "dev": "nodemon src/worker.js",
+    "test": "node src/worker.js --test"
+  },
+  
+  "author": "Aansh",
+  "dependencies": {
+    "@aws-sdk/client-sqs": "^3.400.0",
+    "@aws-sdk/client-s3": "^3.400.0",
+    "@aws-sdk/client-dynamodb": "^3.400.0",
+    "@aws-sdk/lib-dynamodb": "^3.400.0",
+    "pdfkit": "^0.13.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

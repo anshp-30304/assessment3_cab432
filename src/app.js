@@ -9,7 +9,8 @@ const expressWs = require('express-ws');
 const authRoutes = require('./routes/auth');
 const taskRoutes = require('./routes/tasks');
 const fileRoutes = require('./routes/files');
-
+const { SQSClient, SendMessageCommand } = require('@aws-sdk/client-sqs');
+const sqsClient = new SQSClient({ region: process.env.AWS_REGION });
 // Import services
 const { initializeServices } = require('./services/init');
 
@@ -62,6 +63,35 @@ app.ws('/api/notifications', (ws, req) => {
   });
 });
 
+
+// NEW ROUTE: Request task report generation
+app.post('/api/reports/generate', authenticateToken, async (req, res) => {
+  try {
+    const { taskIds, reportType = 'summary' } = req.body;
+    
+    const message = {
+      userId: req.user.userId,
+      taskIds: taskIds || 'all',
+      reportType,
+      requestId: uuidv4(),
+      timestamp: new Date().toISOString()
+    };
+
+    const command = new SendMessageCommand({
+      QueueUrl: process.env.SQS_QUEUE_URL,
+      MessageBody: JSON.stringify(message)
+    });
+
+    await sqsClient.send(command);
+    
+    res.json({ 
+      message: 'Report generation queued',
+      requestId: message.requestId 
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to queue report' });
+  }
+});
 // Error handling middleware
 app.use((error, req, res, next) => {
   console.error('Error:', error);
