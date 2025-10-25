@@ -1,607 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Task Manager - CAB432 Assignment 2</title>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        padding: 20px;
-      }
-
-      .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
-      }
-
-      .header {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        color: white;
-        padding: 30px;
-        text-align: center;
-      }
-
-      .header h1 {
-        font-size: 2.5rem;
-        margin-bottom: 10px;
-        font-weight: 700;
-      }
-
-      .header p {
-        opacity: 0.9;
-        font-size: 1.1rem;
-      }
-
-      .main-content {
-        padding: 30px;
-      }
-
-      .auth-section,
-      .app-section {
-        display: none;
-      }
-
-      .auth-section.active,
-      .app-section.active {
-        display: block;
-      }
-
-      .form-container {
-        max-width: 400px;
-        margin: 0 auto;
-        background: #f8fafc;
-        padding: 30px;
-        border-radius: 10px;
-        border: 1px solid #e2e8f0;
-      }
-
-      .form-group {
-        margin-bottom: 20px;
-      }
-
-      .form-group label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: 600;
-        color: #374151;
-      }
-
-      .form-group input,
-      .form-group textarea,
-      .form-group select {
-        width: 100%;
-        padding: 12px;
-        border: 2px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 16px;
-        transition: all 0.3s ease;
-      }
-
-      .form-group input:focus,
-      .form-group textarea:focus,
-      .form-group select:focus {
-        outline: none;
-        border-color: #4f46e5;
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-      }
-
-      .btn {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        color: white;
-        padding: 12px 24px;
-        border: none;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        width: 100%;
-      }
-
-      .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
-      }
-
-      .btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none;
-      }
-
-      .btn-secondary {
-        background: #6b7280;
-        margin-top: 10px;
-      }
-
-      .btn-danger {
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-      }
-
-      .auth-tabs {
-        display: flex;
-        margin-bottom: 20px;
-      }
-
-      .auth-tab {
-        flex: 1;
-        padding: 15px;
-        background: #e2e8f0;
-        border: none;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.3s ease;
-      }
-
-      .auth-tab.active {
-        background: #4f46e5;
-        color: white;
-      }
-
-      .auth-tab:first-child {
-        border-radius: 8px 0 0 8px;
-      }
-
-      .auth-tab:last-child {
-        border-radius: 0 8px 8px 0;
-      }
-
-      .user-info {
-        background: #f0f9ff;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 30px;
-        border-left: 4px solid #0ea5e9;
-      }
-
-      .user-info h3 {
-        color: #0c4a6e;
-        margin-bottom: 10px;
-      }
-
-      .tasks-container {
-        display: grid;
-        grid-template-columns: 1fr 2fr;
-        gap: 30px;
-        margin-top: 30px;
-      }
-
-      .task-form {
-        background: #f8fafc;
-        padding: 25px;
-        border-radius: 10px;
-        border: 1px solid #e2e8f0;
-        height: fit-content;
-      }
-
-      .tasks-list {
-        background: #f8fafc;
-        padding: 25px;
-        border-radius: 10px;
-        border: 1px solid #e2e8f0;
-      }
-
-      .task-item {
-        background: white;
-        padding: 20px;
-        margin-bottom: 15px;
-        border-radius: 10px;
-        border: 1px solid #e2e8f0;
-        transition: all 0.3s ease;
-        position: relative;
-      }
-
-      .task-item:hover {
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        transform: translateY(-2px);
-      }
-
-      .task-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 10px;
-      }
-
-      .task-title {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #1f2937;
-        margin-bottom: 5px;
-      }
-
-      .task-meta {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 10px;
-      }
-
-      .task-badge {
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-        text-transform: uppercase;
-      }
-
-      .priority-high {
-        background: #fee2e2;
-        color: #dc2626;
-      }
-
-      .priority-medium {
-        background: #fef3c7;
-        color: #d97706;
-      }
-
-      .priority-low {
-        background: #dcfce7;
-        color: #16a34a;
-      }
-
-      .status-todo {
-        background: #ede9fe;
-        color: #7c3aed;
-      }
-
-      .status-inprogress {
-        background: #dbeafe;
-        color: #2563eb;
-      }
-
-      .status-completed {
-        background: #dcfce7;
-        color: #16a34a;
-      }
-
-      .task-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 15px;
-      }
-
-      .btn-small {
-        padding: 6px 12px;
-        font-size: 14px;
-        width: auto;
-      }
-
-      .file-upload-section {
-        margin-top: 20px;
-        padding-top: 20px;
-        border-top: 1px solid #e2e8f0;
-      }
-
-      .file-list {
-        margin-top: 15px;
-      }
-
-      .file-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px;
-        background: #f1f5f9;
-        border-radius: 6px;
-        margin-bottom: 8px;
-      }
-
-      .alert {
-        padding: 15px;
-        margin-bottom: 20px;
-        border-radius: 8px;
-        font-weight: 500;
-      }
-
-      .alert-success {
-        background: #dcfce7;
-        color: #166534;
-        border: 1px solid #bbf7d0;
-      }
-
-      .alert-error {
-        background: #fee2e2;
-        color: #dc2626;
-        border: 1px solid #fca5a5;
-      }
-
-      .alert-info {
-        background: #dbeafe;
-        color: #1e40af;
-        border: 1px solid #93c5fd;
-      }
-
-      .loading {
-        text-align: center;
-        color: #6b7280;
-        font-style: italic;
-      }
-
-      .websocket-status {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 10px 15px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-        z-index: 1000;
-      }
-
-      .websocket-connected {
-        background: #dcfce7;
-        color: #16a34a;
-      }
-
-      .websocket-disconnected {
-        background: #fee2e2;
-        color: #dc2626;
-      }
-
-      .cache-indicator {
-        font-size: 12px;
-        color: #6b7280;
-        margin-top: 10px;
-        text-align: center;
-      }
-
-      @media (max-width: 768px) {
-        .tasks-container {
-          grid-template-columns: 1fr;
-        }
-
-        .container {
-          margin: 10px;
-          border-radius: 10px;
-        }
-
-        .main-content {
-          padding: 20px;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <h1>📋 Task Manager</h1>
-        <p>CAB432 Assignment 2 - Cloud Services Demo</p>
-      </div>
-
-      <div class="main-content">
-        <!-- Authentication Section -->
-        <div class="auth-section active" id="authSection">
-          <div class="form-container">
-            <div class="auth-tabs">
-              <button class="auth-tab active" onclick="switchAuthTab('login')">
-                Login
-              </button>
-              <button class="auth-tab" onclick="switchAuthTab('register')">
-                Register
-              </button>
-              <button class="auth-tab" onclick="switchAuthTab('confirm')">
-                Confirm
-              </button>
-            </div>
-
-            <div id="alertContainer"></div>
-
-            <!-- Login Form -->
-            <div id="loginForm" class="auth-form">
-              <div class="form-group">
-                <label for="loginUsername">Username:</label>
-                <input
-                  type="text"
-                  id="loginUsername"
-                  placeholder="Enter your username"
-                />
-              </div>
-              <div class="form-group">
-                <label for="loginPassword">Password:</label>
-                <input
-                  type="password"
-                  id="loginPassword"
-                  placeholder="Enter your password"
-                />
-              </div>
-              <button class="btn" onclick="login()">Login</button>
-            </div>
-
-            <!-- Register Form -->
-            <div id="registerForm" class="auth-form" style="display: none">
-              <div class="form-group">
-                <label for="registerUsername">Username:</label>
-                <input
-                  type="text"
-                  id="registerUsername"
-                  placeholder="Choose a username"
-                />
-              </div>
-              <div class="form-group">
-                <label for="registerEmail">Email:</label>
-                <input
-                  type="email"
-                  id="registerEmail"
-                  placeholder="Enter your email"
-                />
-              </div>
-              <div class="form-group">
-                <label for="registerPassword">Password:</label>
-                <input
-                  type="password"
-                  id="registerPassword"
-                  placeholder="Choose a strong password"
-                />
-              </div>
-              <button class="btn" onclick="register()">Register</button>
-            </div>
-
-            <!-- Confirm Form -->
-            <div id="confirmForm" class="auth-form" style="display: none">
-              <div class="form-group">
-                <label for="confirmUsername">Username:</label>
-                <input
-                  type="text"
-                  id="confirmUsername"
-                  placeholder="Enter your username"
-                />
-              </div>
-              <div class="form-group">
-                <label for="confirmationCode">Confirmation Code:</label>
-                <input
-                  type="text"
-                  id="confirmationCode"
-                  placeholder="Enter code from email"
-                />
-              </div>
-              <button class="btn" onclick="confirmRegistration()">
-                Confirm Email
-              </button>
-            </div>
-
-            <div
-              style="
-                margin-top: 20px;
-                padding: 15px;
-                background: #f0f9ff;
-                border-radius: 8px;
-                font-size: 14px;
-              "
-            >
-              <p><strong>Demo Credentials:</strong></p>
-              <p>
-                Create your own account or use test credentials if available
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Main App Section -->
-        <div class="app-section" id="appSection">
-          <div class="user-info" id="userInfo"></div>
-
-          <div class="tasks-container">
-            <!-- Task Creation Form -->
-            <div class="task-form">
-              <h3>Create New Task</h3>
-              <div id="taskAlertContainer"></div>
-
-              <div class="form-group">
-                <label for="taskTitle">Title:</label>
-                <input
-                  type="text"
-                  id="taskTitle"
-                  placeholder="Enter task title"
-                />
-              </div>
-
-              <div class="form-group">
-                <label for="taskDescription">Description:</label>
-                <textarea
-                  id="taskDescription"
-                  rows="4"
-                  placeholder="Enter task description"
-                ></textarea>
-              </div>
-
-              <div class="form-group">
-                <label for="taskPriority">Priority:</label>
-                <select id="taskPriority">
-                  <option value="low">Low</option>
-                  <option value="medium" selected>Medium</option>
-                  <option value="high">High</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="taskStatus">Status:</label>
-                <select id="taskStatus">
-                  <option value="todo" selected>To Do</option>
-                  <option value="inprogress">In Progress</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </div>
-
-              <button class="btn" onclick="createTask()">Create Task</button>
-
-              <!-- File Upload Section -->
-              <div class="file-upload-section">
-                <h4>Attach File</h4>
-                <div class="form-group">
-                  <label for="fileUpload">Choose File:</label>
-                  <input type="file" id="fileUpload" />
-                </div>
-                <button class="btn btn-secondary" onclick="uploadFile()">
-                  Upload File
-                </button>
-
-                <div class="file-list" id="fileList"></div>
-              </div>
-
-              <button
-                class="btn btn-danger"
-                onclick="logout()"
-                style="margin-top: 30px"
-              >
-                Logout
-              </button>
-            </div>
-
-            <!-- Tasks List -->
-            <div class="tasks-list">
-              <div
-                style="
-                  display: flex;
-                  justify-content: space-between;
-                  align-items: center;
-                  margin-bottom: 20px;
-                "
-              >
-                <h3>Your Tasks</h3>
-                <button class="btn btn-small" onclick="loadTasks()">
-                  Refresh
-                </button>
-                <button
-                  class="btn btn-small"
-                  onclick="generateReport()"
-                  class="btn"
-                >
-                  📊 Generate Task Report
-                </button>
-              </div>
-
-              <div id="tasksContainer">
-                <div class="loading">Loading tasks...</div>
-              </div>
-
-              <div class="cache-indicator" id="cacheIndicator"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- WebSocket Status Indicator -->
-    <div class="websocket-status websocket-disconnected" id="websocketStatus">
-      WebSocket: Disconnected
-    </div>
-
-    <script>
-      // Configuration
-      const API_BASE_URL = "http://54.253.199.219:3000"; // Change this to your domain
+   // Configuration
+      const API_BASE_URL = "https://n11857374-tasks.cab432.com"; // Change this to your domain
       let currentUser = null;
       let authToken = null;
       let websocket = null;
@@ -635,29 +33,6 @@
             alertDiv.parentNode.removeChild(alertDiv);
           }
         }, 5000);
-      }
-      async function generateReport() {
-        try {
-          const response = await makeApiRequest(
-            "/api/reports/generate",
-            "POST",
-            {
-              taskIds: "all",
-              reportType: "summary",
-            }
-          );
-
-          if (response.ok) {
-            const data = await response.json();
-            showAlert(
-              `Report queued! Request ID: ${data.requestId}`,
-              "success"
-            );
-            // Poll for completion or use WebSocket for notification
-          }
-        } catch (error) {
-          showAlert("Failed to generate report", "error");
-        }   
       }
 
       function makeApiRequest(endpoint, method = "GET", body = null) {
@@ -727,6 +102,146 @@
           showAlert("Network error. Please check your connection.", "error");
         }
       }
+
+      async function generateReport() {
+        try {
+          const response = await makeApiRequest(
+            "/api/reports/generate",
+            "POST",
+            {
+              taskIds: "all",
+              reportType: "summary",
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            showAlert(
+              `Report queued! Request ID: ${data.requestId}`,
+              "success"
+            );
+            // Poll for completion or use WebSocket for notification
+          }
+        } catch (error) {
+          showAlert("Failed to generate report", "error");
+        }
+      }
+
+
+
+
+      async function pollReportStatus(requestId, attempts = 0) {
+    const maxAttempts = 60; // 60 attempts = 2 minutes max
+    
+    if (attempts >= maxAttempts) {
+        console.log('Max polling attempts reached for', requestId);
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('token');
+        
+        const response = await fetch(`/api/reports/status/${requestId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'completed') {
+            console.log('Report completed:', requestId);
+            
+            // Update stored reports
+            const reports = JSON.parse(localStorage.getItem('reports') || '[]');
+            const report = reports.find(r => r.requestId === requestId);
+            if (report) {
+                report.status = 'completed';
+                localStorage.setItem('reports', JSON.stringify(reports));
+            }
+
+            // Refresh reports list
+            loadReports();
+            
+            // Show notification
+            showNotification('Report generated successfully!', 'success');
+        } else if (data.status === 'processing') {
+            // Continue polling
+            setTimeout(() => pollReportStatus(requestId, attempts + 1), 2000);
+        }
+    } catch (error) {
+        console.error('Error polling report status:', error);
+    }
+}
+
+/**
+ * Load and display reports list
+ */
+function loadReports() {
+    const reports = JSON.parse(localStorage.getItem('reports') || '[]');
+    const listDiv = document.getElementById('reportsList');
+
+    if (reports.length === 0) {
+        listDiv.innerHTML = '<p class="text-muted">No reports generated yet</p>';
+        return;
+    }
+
+    listDiv.innerHTML = reports.map(report => `
+        <div class="report-item">
+            <div class="report-info">
+                <span class="report-id">Report ${report.requestId.substring(0, 8)}...</span>
+                <span class="report-date">${new Date(report.timestamp).toLocaleString()}</span>
+                <span class="report-status status-${report.status}">${report.status}</span>
+            </div>
+            ${report.status === 'completed' ? `
+                <button onclick="downloadReport('${report.requestId}')" class="btn btn-small">
+                    Download PDF
+                </button>
+            ` : `
+                <button class="btn btn-small" disabled>
+                    Processing...
+                </button>
+            `}
+        </div>
+    `).join('');
+}
+
+/**
+ * Download a completed report
+ */
+async function downloadReport(requestId) {
+    try {
+        const token = localStorage.getItem('token');
+        
+        const response = await fetch(`/api/reports/download/${requestId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `task-report-${requestId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            showNotification('Report downloaded successfully!', 'success');
+        } else {
+            const data = await response.json();
+            showNotification(data.error || 'Download failed', 'error');
+        }
+    } catch (error) {
+        console.error('Error downloading report:', error);
+        showNotification('Download failed', 'error');
+    }
+}
+
+
 
       async function confirmRegistration() {
         const username = document.getElementById("confirmUsername").value;
@@ -1210,7 +725,7 @@
         if (!currentUser) return;
 
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const wsUrl = `${protocol}//${window.location.hostname}:3000/api/notifications`;
+        const wsUrl = `${protocol}//n11857374-tasks.cab432.com/api/notifications`;
 
         websocket = new WebSocket(wsUrl);
 
@@ -1305,10 +820,7 @@
         const currentUrl = document.getElementById("apiUrl")
           ? document.getElementById("apiUrl").value
           : API_BASE_URL;
-        const newUrl = prompt(
-          "Enter your API URL (e.g., http://n1234567-tasks.cab432.com:3000):",
-          currentUrl
-        );
+        const newUrl = prompt("Enter your API URL :", currentUrl);
 
         if (newUrl && newUrl !== currentUrl) {
           // Update the API base URL
@@ -1407,6 +919,3 @@
           showAlert("❌ API Health Check: Connection failed", "error");
         }
       }
-    </script>
-  </body>
-</html>

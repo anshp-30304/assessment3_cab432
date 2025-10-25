@@ -1,123 +1,201 @@
 
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const morgan = require('morgan');
-const expressWs = require('express-ws');
-// Import routes
-const authRoutes = require('./routes/auth');
-const taskRoutes = require('./routes/tasks');
-const fileRoutes = require('./routes/files');
-const { SQSClient, SendMessageCommand } = require('@aws-sdk/client-sqs');
-const sqsClient = new SQSClient({ region: process.env.AWS_REGION });
-// Import services
-const { initializeServices } = require('./services/init');
 
 const app = express();
-expressWs(app); // Enable WebSocket support
-
-const PORT = process.env.PORT || 3000;
-
-// Middleware
-app.use(helmet());
-app.use(cors());
-app.use(morgan('combined'));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
 
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+const { SQSClient, SendMessageCommand } = require('@aws-sdk/client-sqs');
+const { v4: uuidv4 } = require('uuid');
+
+
+const sqsClient = new SQSClient({ 
+  region: process.env.AWS_REGION || 'us-east-1' 
 });
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/tasks', taskRoutes);
-app.use('/api/files', fileRoutes);
-
-// WebSocket for real-time notifications
-app.ws('/api/notifications', (ws, req) => {
-  console.log('WebSocket connection established');
-  
-  ws.on('message', (message) => {
-    try {
-      const data = JSON.parse(message);
-      if (data.type === 'subscribe') {
-        ws.userId = data.userId;
-        ws.send(JSON.stringify({ type: 'subscribed', userId: data.userId }));
-      }
-    } catch (error) {
-      console.error('WebSocket message error:', error);
-    }
-  });
-
-  ws.on('close', () => {
-    console.log('WebSocket connection closed');
-  });
-
-  // Handle connection loss gracefully
-  ws.on('error', (error) => {
-    console.error('WebSocket error:', error);
-  });
-});
+const SQS_QUEUE_URL = process.env.SQS_QUEUE_URL;
 
 
-// NEW ROUTE: Request task report generation
 app.post('/api/reports/generate', authenticateToken, async (req, res) => {
   try {
-    const { taskIds, reportType = 'summary' } = req.body;
+    const userId = req.user.sub; // From JWT token
+    const { reportType = 'task-summary' } = req.body;
+
+    // Validate queue URL
+    if (!SQS_QUEUE_URL) {
+      console.error('SQS_QUEUE_URL not configured');
+      return res.status(500).json({ 
+        error: 'Report service not configured' 
+      });
+    }
+
+    // Generate unique request ID
+    const requestId = uuidv4();
     
-    const message = {
-      userId: req.user.userId,
-      taskIds: taskIds || 'all',
+    // Create message payload
+    const messageBody = {
+      requestId,
+      userId,
       reportType,
-      requestId: uuidv4(),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      metadata: {
+        userAgent: req.headers['user-agent'],
+        ip: req.ip
+      }
     };
 
+    // Send message to SQS
     const command = new SendMessageCommand({
-      QueueUrl: process.env.SQS_QUEUE_URL,
-      MessageBody: JSON.stringify(message)
+      QueueUrl: SQS_QUEUE_URL,
+      MessageBody: JSON.stringify(messageBody),
+      MessageAttributes: {
+        'RequestId': {
+          DataType: 'String',
+          StringValue: requestId
+        },
+        'UserId': {
+          DataType: 'String',
+          StringValue: userId
+        },
+        'ReportType': {
+          DataType: 'String',
+          StringValue: reportType
+        }
+      }
     });
 
     await sqsClient.send(command);
-    
-    res.json({ 
-      message: 'Report generation queued',
-      requestId: message.requestId 
+
+    console.log(`Report queued: ${requestId} for user: ${userId}`);
+
+    // Return success response
+    res.status(202).json({
+      message: 'Report generation queued successfully',
+      requestId,
+      status: 'queued',
+      estimatedTime: '1-2 minutes'
     });
+
   } catch (error) {
-    res.status(500).json({ error: 'Failed to queue report' });
+    console.error('Error queueing report:', error);
+    res.status(500).json({ 
+      error: 'Failed to queue report generation',
+      details: error.message 
+    });
   }
 });
-// Error handling middleware
-app.use((error, req, res, next) => {
-  console.error('Error:', error);
-  res.status(500).json({
-    error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+
+
+app.get('/api/reports/status/:requestId', authenticateToken, async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const userId = req.user.sub;
+
+    // Check if report exists in S3
+    const s3Key = `reports/${userId}/${requestId}.pdf`;
+    
+    // Try to get object metadata
+    const s3Client = new S3Client({ region: process.env.AWS_REGION });
+    const { HeadObjectCommand } = require('@aws-sdk/client-s3');
+    
+    try {
+      await s3Client.send(new HeadObjectCommand({
+        Bucket: process.env.S3_BUCKET,
+        Key: s3Key
+      }));
+
+      // File exists
+      res.json({
+        requestId,
+        status: 'completed',
+        downloadUrl: `/api/reports/download/${requestId}`
+      });
+    } catch (error) {
+      if (error.name === 'NotFound') {
+        // Still processing
+        res.json({
+          requestId,
+          status: 'processing',
+          message: 'Report is being generated'
+        });
+      } else {
+        throw error;
+      }
+    }
+
+  } catch (error) {
+    console.error('Error checking report status:', error);
+    res.status(500).json({ 
+      error: 'Failed to check report status',
+      details: error.message 
+    });
+  }
+});
+
+
+app.get('/api/reports/download/:requestId', authenticateToken, async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const userId = req.user.sub;
+
+    const s3Key = `reports/${userId}/${requestId}.pdf`;
+    
+    const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
+    const s3Client = new S3Client({ region: process.env.AWS_REGION });
+
+    const command = new GetObjectCommand({
+      Bucket: process.env.S3_BUCKET,
+      Key: s3Key
+    });
+
+    const response = await s3Client.send(command);
+
+    // Set headers for PDF download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="task-report-${requestId}.pdf"`);
+
+    // Stream the PDF to response
+    response.Body.pipe(res);
+
+  } catch (error) {
+    console.error('Error downloading report:', error);
+    
+    if (error.name === 'NoSuchKey') {
+      res.status(404).json({ 
+        error: 'Report not found',
+        message: 'Report may still be processing or does not exist'
+      });
+    } else {
+      res.status(500).json({ 
+        error: 'Failed to download report',
+        details: error.message 
+      });
+    }
+  }
+});
+
+
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy',
+    service: 'task-manager-api',
+    version: '3.0.0',
+    timestamp: new Date().toISOString(),
+    features: {
+      sqs: !!SQS_QUEUE_URL,
+      s3: !!process.env.S3_BUCKET,
+      dynamodb: !!process.env.DYNAMODB_TASKS_TABLE
+    }
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: err.message 
+  });
 });
 
-// Initialize services and start server
-async function startServer() {
-  try {
-    await initializeServices();
-    app.listen(PORT, () => {
-      console.log(`Task Manager API running on port ${PORT}`);
-      console.log(`Health check: http://localhost:${PORT}/health`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
-}
-
-startServer();
+module.exports = app;

@@ -1,4 +1,12 @@
-
+/**
+ * Report Worker Service - Main Entry Point
+ * 
+ * This worker polls SQS queue for report generation requests,
+ * processes them (CPU-intensive PDF generation), and uploads
+ * the results to S3.
+ * 
+ * Auto-scaling: This service scales based on CPU utilization (70% target)
+ */
 
 require('dotenv').config();
 const { SQSClient, ReceiveMessageCommand, DeleteMessageCommand } = require('@aws-sdk/client-sqs');

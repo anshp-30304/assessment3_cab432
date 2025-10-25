@@ -8,8 +8,16 @@
     "dev": "nodemon src/worker.js",
     "test": "node src/worker.js --test"
   },
-  
-  "author": "Aansh",
+  "keywords": [
+    "task-manager",
+    "worker",
+    "pdf",
+    "report-generation",
+    "sqs",
+    "aws"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
   "dependencies": {
     "@aws-sdk/client-sqs": "^3.400.0",
     "@aws-sdk/client-s3": "^3.400.0",
