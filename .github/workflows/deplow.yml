@@ -1,0 +1,43 @@
+name: Build and Push to ECR
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-southeast-2
+  ECR_REGISTRY: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+    
+    - name: Build and push worker image
+      working-directory: ./worker-service
+      run: |
+        docker build -t task-manager-worker .
+        docker tag task-manager-worker:latest $ECR_REGISTRY/task-manager-worker:latest
+        docker push $ECR_REGISTRY/task-manager-worker:latest
+    
+    - name: Build and push API image
+      working-directory: ./api-service
+      run: |
+        docker build -t task-manager-api .
+        docker tag task-manager-api:latest $ECR_REGISTRY/task-manager-api:latest
+        docker push $ECR_REGISTRY/task-manager-api:latest
