@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Task Manager - CAB432 Assignment 2</title>
+    <title>Task Manager - CAB432 Assignment 3</title>
     <link rel="stylesheet" href="style.css"/>
   </head>
   <body>
     <div class="container">
       <div class="header">
-        <h1>📋 Task Manager</h1>
-        <p>CAB432 Assignment 2 - Cloud Services Demo</p>
+        <h1>📋 Task Manager Pro</h1>
+        <p>CAB432 Assignment 3 - Distributed Systems with Async Processing</p>
       </div>
 
       <div class="main-content">
@@ -104,19 +104,15 @@
               </button>
             </div>
 
-            <div
-              style="
-                margin-top: 20px;
-                padding: 15px;
-                background: #f0f9ff;
-                border-radius: 8px;
-                font-size: 14px;
-              "
-            >
-              <p><strong>Demo Credentials:</strong></p>
-              <p>
-                Create your own account or use test credentials if available
-              </p>
+            <div class="info-box">
+              <p><strong>💡 Assignment 3 Features:</strong></p>
+              <ul style="margin: 10px 0 0 20px; text-align: left;">
+                <li>Decoupled architecture (API + Worker)</li>
+                <li>Asynchronous PDF report generation</li>
+                <li>SQS message queue processing</li>
+                <li>Real-time worker status monitoring</li>
+                <li>S3 file storage & retrieval</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -124,26 +120,35 @@
         <!-- Main App Section -->
         <div class="app-section" id="appSection">
           <div class="user-info" id="userInfo"></div>
-  <div class="container" id="reportsContainer" style="display: none;">
-        <div class="card">
-            <h2>📊 Task Reports</h2>
-            
-            <div class="report-section">
+
+          <!-- Worker Status Section -->
+          <div id="workerStatus" class="worker-status-container"></div>
+
+          <!-- Reports Section -->
+          <div class="reports-container">
+            <div class="card">
+              <h2>📊 Task Reports & PDF Generation</h2>
+              
+              <div class="report-section">
                 <h3>Generate New Report</h3>
-                <button onclick="generateReport()" class="btn btn-primary">
-                    Generate Task Report
+                <p style="color: #6b7280; margin-bottom: 15px;">
+                  Generate a comprehensive PDF report of all your tasks. 
+                  This demonstrates asynchronous processing with SQS and worker services.
+                </p>
+                <button onclick="generateReport()" class="btn btn-report">
+                  📄 Generate Task Report PDF
                 </button>
                 <div id="reportStatus" class="status-message"></div>
-            </div>
+              </div>
 
-            <div class="report-section">
+              <div class="report-section">
                 <h3>Recent Reports</h3>
                 <div id="reportsList">
-                    <p class="text-muted">No reports generated yet</p>
+                  <p class="text-muted">No reports generated yet</p>
                 </div>
+              </div>
             </div>
-        </div>
-    </div>
+          </div>
 
           <div class="tasks-container">
             <!-- Task Creation Form -->
@@ -203,10 +208,18 @@
                 <div class="file-list" id="fileList"></div>
               </div>
 
+              <button class="btn btn-secondary" onclick="runDemo()" style="margin-top: 20px">
+                🚀 Run Demo
+              </button>
+
+              <button class="btn btn-secondary" onclick="checkHealth()" style="margin-top: 10px">
+                ✅ Check API Health
+              </button>
+
               <button
                 class="btn btn-danger"
                 onclick="logout()"
-                style="margin-top: 30px"
+                style="margin-top: 20px"
               >
                 Logout
               </button>
@@ -214,24 +227,10 @@
 
             <!-- Tasks List -->
             <div class="tasks-list">
-              <div
-                style="
-                  display: flex;
-                  justify-content: space-between;
-                  align-items: center;
-                  margin-bottom: 20px;
-                "
-              >
+              <div class="tasks-header">
                 <h3>Your Tasks</h3>
                 <button class="btn btn-small" onclick="loadTasks()">
-                  Refresh
-                </button>
-                <button
-                  class="btn btn-small"
-                  onclick="generateReport()"
-                  class="btn"
-                >
-                  📊 Generate Task Report
+                  🔄 Refresh
                 </button>
               </div>
 

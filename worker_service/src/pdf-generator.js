@@ -14,6 +14,7 @@
 
 const PDFDocument = require('pdfkit');
 
+require('dotenv').config();
 /**
  * Main PDF generation function
  * This is designed to be CPU-intensive for auto-scaling purposes

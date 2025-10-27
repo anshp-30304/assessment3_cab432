@@ -9,6 +9,7 @@ const {
   AdminGetUserCommand
 } = require('@aws-sdk/client-cognito-identity-provider');
 
+require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const jwkToPem = require('jwk-to-pem');
 const axios = require('axios');
